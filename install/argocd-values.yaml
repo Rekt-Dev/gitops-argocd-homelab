@@ -1,0 +1,68 @@
+# ArgoCD Helm values for homelab installation
+# Using the argo/argo-cd chart, pinned to v2.10.x
+#
+# helm repo add argo https://argoproj.github.io/argo-helm
+# helm install argocd argo/argo-cd \
+#   --namespace argocd --create-namespace \
+#   --version 7.x.x \
+#   -f install/argocd-values.yaml
+
+global:
+  image:
+    tag: "v2.10.5"
+
+server:
+  # Expose via NodePort for homelab — no LoadBalancer available
+  service:
+    type: NodePort
+    nodePortHttps: 30443
+    nodePortHttp: 30080
+  # Insecure mode — TLS terminated at the reverse proxy or accessed directly
+  # For a homelab with no external exposure, this is acceptable
+  extraArgs:
+    - --insecure
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+applicationSet:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+notifications:
+  enabled: false
+
+dex:
+  enabled: false
+
+redis:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+configs:
+  params:
+    # Reduce resource consumption — single replica is fine for homelab
+    "server.disable.auth": false

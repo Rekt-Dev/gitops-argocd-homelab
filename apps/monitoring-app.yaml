@@ -1,0 +1,33 @@
+# ArgoCD Application — monitoring stack
+# Points to k8s-observability-stack repository.
+# Uses Helm values file from the repo so changes to prometheus/values.yaml
+# trigger an ArgoCD sync and Helm upgrade automatically.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+  source:
+    repoURL: https://github.com/Rekt-Dev/k8s-observability-stack
+    targetRevision: main
+    path: .
+    # Use Helm chart with values from the repo
+    plugin:
+      name: argocd-vault-plugin-helm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      # Don't selfHeal monitoring — manual interventions (silencing alerts,
+      # tweaking Grafana dashboards) should not be immediately reverted
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

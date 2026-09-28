@@ -1,0 +1,35 @@
+# ArgoCD Application — production workloads
+# Points to the k8s-production-patterns repository.
+# ArgoCD watches for changes to main branch and syncs automatically.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-workloads
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+  source:
+    repoURL: https://github.com/Rekt-Dev/k8s-production-patterns
+    targetRevision: main
+    path: manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: true
+      # selfHeal: sync if cluster state drifts from Git
+      # This means any manual kubectl apply in the namespace gets reverted
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

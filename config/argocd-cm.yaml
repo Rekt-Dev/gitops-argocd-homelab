@@ -1,0 +1,31 @@
+# ArgoCD ConfigMap customizations
+# Modify default ArgoCD behavior for homelab usage
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Poll Git repos every 3 minutes (default: 3m, keeping default)
+  timeout.reconciliation: 180s
+
+  # Resource tracking method — annotation is recommended for clusters
+  # using server-side apply or when field manager conflicts occur
+  application.resourceTrackingMethod: annotation
+
+  # Ignore differences in certain fields that change at runtime
+  resource.customizations.ignoreDifferences.admissionregistration.k8s.io_MutatingWebhookConfiguration: |
+    jqPathExpressions:
+      - .webhooks[]?.clientConfig.caBundle
+
+  resource.customizations.ignoreDifferences.admissionregistration.k8s.io_ValidatingWebhookConfiguration: |
+    jqPathExpressions:
+      - .webhooks[]?.clientConfig.caBundle
+
+  # Repository credentials template (actual credentials in argocd-repo-creds Secret)
+  repositories: |
+    - url: https://github.com/Rekt-Dev

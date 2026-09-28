@@ -1,0 +1,33 @@
+# App of Apps root application
+# This single ArgoCD Application points to the apps/ directory.
+# ArgoCD syncs it and discovers all other Application manifests within,
+# bootstrapping the entire cluster application state from a single kubectl apply.
+#
+# Bootstrap command (one-time):
+#   kubectl apply -f apps/app-of-apps.yaml -n argocd
+#
+# After this, all further changes happen via Git — no more kubectl apply.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+  # Cascade delete: deleting this app also deletes all child apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+  source:
+    repoURL: https://github.com/Rekt-Dev/gitops-argocd-homelab
+    targetRevision: main
+    path: apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

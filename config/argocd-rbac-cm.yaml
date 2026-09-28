@@ -1,0 +1,35 @@
+# ArgoCD RBAC configuration
+# Controls who can do what within ArgoCD UI/CLI
+# This does not replace Kubernetes RBAC — it controls ArgoCD's own permissions
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    # Admin role — full access
+    p, role:admin, applications, *, */*, allow
+    p, role:admin, clusters, get, *, allow
+    p, role:admin, repositories, *, *, allow
+    p, role:admin, projects, *, *, allow
+    p, role:admin, accounts, *, *, allow
+
+    # Developer role — can sync and view, cannot delete
+    p, role:developer, applications, get, */*, allow
+    p, role:developer, applications, sync, */*, allow
+    p, role:developer, applications, override, */*, allow
+    p, role:developer, logs, get, */*, allow
+    p, role:developer, exec, create, */*, deny
+
+    # Bind groups to roles
+    g, homelab-admins, role:admin
+    g, dev-team, role:developer
+
+  # SSO group claim attribute
+  scopes: "[groups]"

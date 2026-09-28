@@ -1,0 +1,55 @@
+# ArgoCD AppProject — homelab
+# AppProjects restrict which repos, clusters, and namespaces Applications
+# within the project can deploy to. This prevents a misconfigured Application
+# from accidentally modifying kube-system or deploying from an untrusted repo.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: homelab
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Homelab k8s cluster applications
+
+  # Only these repos are trusted sources for this project
+  sourceRepos:
+    - https://github.com/Rekt-Dev/k8s-production-patterns
+    - https://github.com/Rekt-Dev/k8s-observability-stack
+    - https://github.com/Rekt-Dev/gitops-argocd-homelab
+    - https://prometheus-community.github.io/helm-charts
+    - https://argoproj.github.io/argo-helm
+
+  # Only deploy to the local cluster
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: production
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+    - server: https://kubernetes.default.svc
+      namespace: ingress-nginx
+
+  # Allow all resource types within scoped namespaces
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Restrict roles within project
+  roles:
+    - name: read-only
+      description: Read-only access to project applications
+      policies:
+        - p, proj:homelab:read-only, applications, get, homelab/*, allow
+      groups:
+        - dev-team
